@@ -1,0 +1,36 @@
+#!/bin/bash
+
+###########################################
+#                                         #
+# cla-ssh: Command Line Assistant for SSH #
+#                                         #
+# Author:  Bryan T. Meyers                #
+# Year:    2015                           #
+# License: MIT                            #
+#                                         #
+###########################################
+
+# Display Welcome Message
+whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
+	--title "Welcome to cla-ssh" \
+	--msgbox "This tool will allow you to manage SSH keys in a safe, easy way.\n\n                      Let's get started!" \
+	9 68
+
+# Run Multiple Times Until Quit
+while [ $? = 0 ]; do
+
+## Select an Operating Mode
+
+MODE=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
+	--title "Pick a Task" \
+	--cancel-button "Quit" \
+	--menu "Choose From:" \
+	12 68 5 \
+	"Create" "Generate a New Key" \
+	"Configure" "Change Settings for a Host" \
+	"Replace" "Update an Existing Key" \
+	"Remove" "Delete an Existing Key" \
+	"Settings" "Configure cla-ssh" \
+	3>&1 1>&2 2>&3 )
+
+done
