@@ -16,8 +16,10 @@ whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
 	--msgbox "This tool will allow you to manage SSH keys in a safe, easy way.\n\n                      Let's get started!" \
 	9 68
 
+exitstatus=$?
+
 # Run Multiple Times Until Quit
-while [ $? = 0 ]; do
+while [ $exitstatus = 0 ]; do
 
 ## Select an Operating Mode
 
@@ -32,5 +34,54 @@ MODE=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
 	"Remove" "Delete an Existing Key" \
 	"Settings" "Configure cla-ssh" \
 	3>&1 1>&2 2>&3 )
+
+exitstatus=$?
+
+if [ $exitstatus = 0 ]; then
+
+case $MODE in
+    "Create" )
+        CHOICE=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
+            --title "Select a Host" \
+            --menu "" \
+            12 68 5\
+            "Add" "Add a new host" \
+	        3>&1 1>&2 2>&3 )
+        case $CHOICE in
+            "Add" )
+                HOST=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
+                    --title "Select a Host" \
+                    --inputbox "\nEnter a hostname:" \
+                    9 68 \
+	                3>&1 1>&2 2>&3 )
+                CIPHER=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
+                    --title "Choose a Cipher" \
+                    --menu "" \
+                    12 68 5 \
+                    "ed25519" "Best" \
+                    "rsa" "Better" \
+                    "ecdsa" "Good" \
+                    "dsa" "Worse" \
+                    "rsa1" "Last Resort" \
+	                3>&1 1>&2 2>&3 )
+                BITS=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
+                    --title "Choose a Key Length" \
+                    --inputbox "Pick a number greater than 2000, but less than 10000 (speed). The more random, the better." \
+                    9 68 \
+	                3>&1 1>&2 2>&3 )
+                ;;
+        esac
+        ;;
+    "Configure" )
+        ;;
+    "Replace" )
+        ;;
+    "Remove" )
+        ;;
+    "Settings" )
+        ;;
+esac
+
+fi
 
 done
