@@ -41,36 +41,51 @@ if [ $exitstatus = 0 ]; then
 
 case $MODE in
     "Create" )
+        file="$HOME/.ssh/config"
+        host="Host (\S*)"
+        HOSTS=""
+        while read line; do 
+            if [[ $line =~ $host ]]; then
+                HOSTS="$HOSTS${BASH_REMATCH[1]}//"
+            fi
+        done < $file
+        oIFS="$IFS"
+        IFS="/"
         CHOICE=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
             --title "Select a Host" \
             --menu "" \
             12 68 5\
             "Add" "Add a new host" \
+            ${HOSTS} \
 	        3>&1 1>&2 2>&3 )
-        case $CHOICE in
-            "Add" )
-                HOST=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
-                    --title "Select a Host" \
-                    --inputbox "\nEnter a hostname:" \
-                    9 68 \
-	                3>&1 1>&2 2>&3 )
-                CIPHER=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
-                    --title "Choose a Cipher" \
-                    --menu "" \
-                    12 68 5 \
-                    "ed25519" "Best" \
-                    "rsa" "Better" \
-                    "ecdsa" "Good" \
-                    "dsa" "Worse" \
-                    "rsa1" "Last Resort" \
-	                3>&1 1>&2 2>&3 )
-                BITS=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
-                    --title "Choose a Key Length" \
-                    --inputbox "Pick a number greater than 2000, but less than 10000 (speed). The more random, the better." \
-                    9 68 \
-	                3>&1 1>&2 2>&3 )
-                ;;
-        esac
+        IFS=$oIFS
+        if [ $CHOICE = "Add" ]; then
+            HOST=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
+                --title "Select a Host" \
+                --inputbox "\nEnter a hostname:" \
+                9 68 \
+                3>&1 1>&2 2>&3 )
+        else
+            HOST=$CHOICE
+        fi
+        CIPHER=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
+            --title "Choose a Cipher" \
+            --menu "" \
+            12 68 5 \
+            "ed25519" "Best" \
+            "rsa" "Better" \
+            "ecdsa" "Good" \
+            "dsa" "Worse" \
+            "rsa1" "Last Resort" \
+            3>&1 1>&2 2>&3 )
+        BITS=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
+            --title "Choose a Key Length" \
+            --inputbox "Pick a number greater than 2000, but less than 10000 (speed). The more random, the better." \
+            9 68 \
+            3>&1 1>&2 2>&3 )
+        echo "HOST: $HOST"
+        echo "CIPHER: $CIPHER"
+        echo "BITS: $BITS"
         ;;
     "Configure" )
         ;;
