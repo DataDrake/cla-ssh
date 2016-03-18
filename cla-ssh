@@ -23,60 +23,60 @@ exitstatus=0
 
 ## Display Welcome Message
 whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
-	--title "Welcome to cla-ssh" \
-	--msgbox "This tool will allow you to manage SSH keys in a safe, easy way.\n\n                      Let's get started!" \
-	9 68
+    --title "Welcome to cla-ssh" \
+    --msgbox "This tool will allow you to manage SSH keys in a safe, easy way.\n\n                      Let's get started!" \
+    9 68
 
 ## Set up SSH Config
 setup() {
 
-	## Check for SSH Config Directory
-	if ! [ -a "$HOME/.ssh" ]; then
-		mkdir "$HOME/.ssh"
-	fi
+    ## Check for SSH Config Directory
+    if ! [ -a "$HOME/.ssh" ]; then
+        mkdir "$HOME/.ssh"
+    fi
 
-	## Check for SSH Config
-	file="$HOME/.ssh/config"
+    ## Check for SSH Config
+    file="$HOME/.ssh/config"
 
-	if ! [ -a "$file" ]; then
-		touch "$file"
-	fi
+    if ! [ -a "$file" ]; then
+        touch "$file"
+    fi
 
 }
 
 ## Select an Operating Mode
 selectMode() {
-	MODE=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
-			--title "Pick a Task" \
-			--cancel-button "Quit" \
-			--menu "Choose From:" \
-			12 68 5 \
-			"Create" "Generate a New Key" \
-			"Update" "Change Settings for a Key" \
-			"Replace" "Update an Existing Key" \
-			"Remove" "Delete an Existing Key" \
-			"Save" "Write Configuration" \
-			3>&1 1>&2 2>&3 )
+    MODE=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
+            --title "Pick a Task" \
+            --cancel-button "Quit" \
+            --menu "Choose From:" \
+            12 68 5 \
+            "Create" "Generate a New Key" \
+            "Update" "Change Settings for a Key" \
+            "Replace" "Update an Existing Key" \
+            "Remove" "Delete an Existing Key" \
+            "Save" "Write Configuration" \
+            3>&1 1>&2 2>&3 )
 
-	exitstatus=$?
+    exitstatus=$?
 }
 
 ## Select a Key
 selectKey() {
-	if [ -n "$CHOICES" ]; then
-	    oIFS="$IFS"
-    	IFS="/"
-	    HOST=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
-		        --title "Select a Key" \
-    		    --menu "" \
-        		12 68 5\
-		        ${CHOICES} \
-    		    3>&1 1>&2 2>&3 )
-		exitstatus=$?
-    	IFS=$oIFS
-	else
-		exitstatus=1
-	fi
+    if [ -n "$CHOICES" ]; then
+        oIFS="$IFS"
+        IFS="/"
+        HOST=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
+                --title "Select a Key" \
+                --menu "" \
+                12 68 5\
+                ${CHOICES} \
+                3>&1 1>&2 2>&3 )
+        exitstatus=$?
+        IFS=$oIFS
+    else
+        exitstatus=1
+    fi
 }
 
 ## Select a New Key
@@ -86,17 +86,17 @@ newKey() {
             --inputbox "\nEnter a Key Name:" \
             9 68 \
             3>&1 1>&2 2>&3 )
-	exitstatus=$?
+    exitstatus=$?
 }
 
 ## Select a New Key
 selectHostName() {
     HOSTNAME=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
-	            --title "Set Hostname" \
-    	        --inputbox "\nEnter a Hostname:" \
-        	    9 68 \
-            	3>&1 1>&2 2>&3 )
-	exitstatus=$?
+                --title "Set Hostname" \
+                --inputbox "\nEnter a Hostname:" \
+                9 68 \
+                3>&1 1>&2 2>&3 )
+    exitstatus=$?
 }
 
 ## Select a Cipher
@@ -111,47 +111,47 @@ selectCipher() {
               "dsa" "Worse" \
               "rsa1" "Last Resort" \
               3>&1 1>&2 2>&3 )
-	exitstatus=$?
+    exitstatus=$?
 }
 
 ## Select a Bit Width
 selectBits() {
     BITS=$( whiptail --backtitle "cla-ssh: Command Line Assistant for SSH" \
-   		    --title "Choose a Key Length" \
+               --title "Choose a Key Length" \
             --inputbox "Pick a number greater than 2000, but less than 10000 (speed). The more random, the better." \
-   		    9 68 \
+               9 68 \
             3>&1 1>&2 2>&3 )
-	exitstatus=$?
+    exitstatus=$?
 }
 
 ## Read Config File
 readConfig(){
-	KEYNAME=""
-	while read k v; do
-		if [ -n "$k" -a -n "$v" ]; then
-        	if [[ "$k" == "Host" ]]; then
-				if [ -n "$KEYNAME" ]; then
-					KEYS[$KEYNAME]=$KEY
-				fi
-    	        KEYNAME=$v
-				unset KEY
-				declare -A KEY
-			else
-				KEY[$k]=$v
-        	fi
-		fi
-	done < "$file"
-	if [ -n "$KEYNAME" ]; then
-		KEYS[$KEYNAME]=$KEY
-	fi
+    KEYNAME=""
+    while read k v; do
+        if [ -n "$k" -a -n "$v" ]; then
+            if [[ "$k" == "Host" ]]; then
+                if [ -n "$KEYNAME" ]; then
+                    KEYS[$KEYNAME]=$KEY
+                fi
+                KEYNAME=$v
+                unset KEY
+                declare -A KEY
+            else
+                KEY[$k]=$v
+            fi
+        fi
+    done < "$file"
+    if [ -n "$KEYNAME" ]; then
+        KEYS[$KEYNAME]=$KEY
+    fi
 }
 
 ## Get Key Choices for Menu
 getChoices() {
-	CHOICES=""
-	for k in "${!KEYS[@]}"; do
-		CHOICES="$CHOICES$k//"
-	done
+    CHOICES=""
+    for k in "${!KEYS[@]}"; do
+        CHOICES="$CHOICES$k//"
+    done
 }
 
 ## Make sure everything is set up
@@ -163,37 +163,38 @@ readConfig
 ## Run Multiple Times Until Quit
 while ! [ $exitstatus -eq 255 ]; do
 
-	# Ask for Mode
-	selectMode
-	if [ $exitstatus -eq 0 ]; then
+    # Ask for Mode
+    selectMode
+    if [ $exitstatus -eq 0 ]; then
 
-		# update the choices for menus
-		getChoices
-		# run through the mode
-		case $MODE in
-    		"Create" )
-				newKey
-				if [ $exitstatus -eq 0 ]; then selectHostName;	fi
-				if [ $exitstatus -eq 0 ]; then selectCipher;	    fi
-				if [ $exitstatus -eq 0 ]; then selectBits;		fi
-	       		;;
-		    "Update" )
-				selectKey
-				if [ $exitstatus -eq 0 ]; then selectHostName;	fi
-				if [ $exitstatus -eq 0 ]; then selectCipher;	    fi
-				if [ $exitstatus -eq 0 ]; then selectBits;		fi
-		        ;;
-    		"Replace" )
-				selectKey
-   	    		;;
-		    "Remove" )
-				selectKey
-				unset KEYS[$HOST]
-    	    	;;
-	    	"Save" )
-	   	    	;;
-		esac
+        # update the choices for menus
+        getChoices
+        # run through the mode
+        case $MODE in
+            "Create" )
+                newKey
+                if [ $exitstatus -eq 0 ]; then selectHostName;    fi
+                if [ $exitstatus -eq 0 ]; then selectCipher;        fi
+                if [ $exitstatus -eq 0 ]; then selectBits;        fi
+                   ;;
+            "Update" )
+                selectKey
+                if [ $exitstatus -eq 0 ]; then selectHostName;    fi
+                if [ $exitstatus -eq 0 ]; then selectCipher;        fi
+                if [ $exitstatus -eq 0 ]; then selectBits;        fi
+                ;;
+            "Replace" )
+                selectKey
+                   ;;
+            "Remove" )
+                selectKey
+                unset KEYS[$HOST]
+                ;;
+            "Save" )
+                   ;;
+        esac
 
-	fi
+    fi
 
 done
+
