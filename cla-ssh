@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/perl
 
 ###########################################
 #                                         #
@@ -10,202 +10,231 @@
 #                                         #
 ###########################################
 
+## Imports
+use Switch;
+use warnings;
+
 ## "Constants"
-backtitle="cla-ssh: Command Line Assistant for SSH"
+my $backtitle = "\"cla-ssh: Command Line Assistant for SSH\"";
 
 ## GLOBALS
-HOST="$USER-$HOSTNAME"
-NAME="$HOSTNAME"
-BITS=2048
-declare -A KEYS
-CHOICES=""
+my $HOST = "$ENV{USER}-" . `hostname`;
+my $NAME = `hostname`;
+my $BITS = 2048;
+my %KEYS;
+my $CHOICES = "";
+my $exitstatus = 0;
 
 ## Display Welcome Message
-whiptail --backtitle "$backtitle" \
-    --title "Welcome to cla-ssh" \
-    --msgbox "This tool will allow you to manage SSH keys in a safe, easy way.\n\n                      Let's get started!" \
-    9 68
+sub welcome {
+	my $cmd = 'whiptail'
+	. " --backtitle $backtitle"
+    . ' --title "Welcome to cla-ssh"'
+	. ' --msgbox "This tool will allow you to manage SSH keys in a safe, easy way.\n\n                      Let\'s get started!"'
+    . ' 9 68'
+    . " 3>&1 1>&2 2>&3";
+	`$cmd`;
+	return;
+}
 
 ## Set up SSH Config
-setup() {
+sub setup {
 
     ## Check for SSH Config Directory
-    if ! [ -a "$HOME/.ssh" ]; then
-        mkdir "$HOME/.ssh"
-    fi
+	unless ( -d "~/.ssh" ) {
+    	mkdir "~/.ssh";
+	}
 
     ## Check for SSH Config
-    file="$HOME/.ssh/config"
+    my $file = "~/.ssh/config";
 
-    if ! [ -a "$file" ]; then
-        touch "$file"
-    fi
-
+    unless( -e $file ) {
+        `touch $file`;
+    }
+	return;
 }
 
 ## Select an Operating Mode
-selectMode() {
-    MODE=$( whiptail --backtitle "$backtitle" \
-            --title "Pick a Task" \
-            --cancel-button "Quit" \
-            --menu "Choose From:" \
-            12 68 5 \
-            "Create" "Generate a New Key" \
-            "Update" "Change Settings for a Key" \
-            "Replace" "Update an Existing Key" \
-            "Remove" "Delete an Existing Key" \
-            "Save" "Write Configuration" \
-            3>&1 1>&2 2>&3 )
-
-    exitstatus=$?
+sub selectMode {
+    my $cmd = "whiptail --backtitle $backtitle"
+    . " --title \"Pick a Task\""
+    . " --cancel-button \"Quit\""
+    . " --menu \"Choose From:\""
+    . " 12 68 5"
+    . ' "Create" "Generate a New Key"'
+    . ' "Update" "Change Settings for a Key"'
+    . ' "Replace" "Update an Existing Key"'
+    . ' "Remove" "Delete an Existing Key"'
+    . ' "Save" "Write Configuration"'
+    . " 3>&1 1>&2 2>&3";
+	$MODE = `$cmd`;
+    $exitstatus = $?;
+	return;
 }
 
 ## Select a Key
-selectKey() {
-    if [ -n "$CHOICES" ]; then
-        oIFS="$IFS"
-        IFS="/"
-        HOST=$( whiptail --backtitle "$backtitle" \
-                --title "Select a Key" \
-                --menu "" \
-                12 68 5\
-                ${CHOICES} \
-                3>&1 1>&2 2>&3 )
-        exitstatus=$?
-        IFS=$oIFS
-    else
-        exitstatus=1
-    fi
+sub selectKey {
+    my $cmd = "whiptail --backtitle $backtitle"
+            . ' --title "Select a Key"'
+            . ' --menu ""'
+            . ' 12 68 5'
+            . " $CHOICES"
+            . " 3>&1 1>&2 2>&3";
+	$HOST = `$cmd`;
+    $exitstatus = $?;
+	return;
 }
 
 ## Select a New Key
-newKey() {
-    HOST=$( whiptail --backtitle "$backtitle" \
-            --title "New Key" \
-            --inputbox "\nEnter a Key Name:" \
-            9 68 \
-			${HOST} \
-            3>&1 1>&2 2>&3 )
-    exitstatus=$?
+sub newKey {
+    my $cmd = 'whiptail'
+			. " --backtitle $backtitle"
+            . ' --title "New Key"'
+            . ' --inputbox "\nEnter a Key Name:"'
+            . ' 9 68'
+			. " $HOST"
+            . " 3>&1 1>&2 2>&3";
+	$HOST = `$cmd`;
+    $exitstatus = $?;
+	return;
 }
 
 ## Select a New Key
-selectHostName() {
-    NAME=$( whiptail --backtitle "$backtitle" \
-                --title "Set Hostname" \
-                --inputbox "\nEnter a Hostname:" \
-                9 68 \
-				${NAME} \
-                3>&1 1>&2 2>&3 )
-    exitstatus=$?
+sub selectHostName {
+    my $cmd = 'whiptail'
+			. " --backtitle $backtitle"
+            . ' --title "Set Hostname"'
+            . ' --inputbox "\nEnter a Hostname:"'
+            . ' 9 68'
+			. $NAME
+            . ' 3>&1 1>&2 2>&3';
+	$NAME = `$cmd`;
+    $exitstatus = $?;
+	return;
 }
 
 ## Select a Cipher
-selectCipher() {
-    CIPHER=$( whiptail --backtitle "$backtitle" \
-              --title "Choose a Cipher" \
-              --menu "" \
-              12 68 5 \
-              "ed25519" "Best" \
-              "rsa" "Better" \
-              "ecdsa" "Good" \
-              "dsa" "Worse" \
-              "rsa1" "Last Resort" \
-			  ${CIPHER} \
-              3>&1 1>&2 2>&3 )
-    exitstatus=$?
+sub selectCipher {
+    my $cmd = 'whiptail'
+			. " --backtitle $backtitle"
+            . ' --title "Choose a Cipher"'
+            . ' --menu ""'
+            . ' 12 68 5'
+            . ' "ed25519" "Best"'
+            . ' "rsa" "Better"'
+            . ' "ecdsa" "Good"'
+            . ' "dsa" "Worse"'
+            . ' "rsa1" "Last Resort"'
+			. "$CIPHER"
+            . ' 3>&1 1>&2 2>&3';
+	$CIPHER = `$cmd`;
+    $exitstatus = $?;
+	return;
 }
 
 ## Select a Bit Width
-selectBits() {
-    BITS=$( whiptail --backtitle "$backtitle" \
-            --title "Choose a Key Length" \
-            --inputbox "Pick a number greater than 2000, but less than 10000 (speed). The more random, the better." \
-            9 68 \
-			${BITS} \
-            3>&1 1>&2 2>&3 )
-    exitstatus=$?
+sub selectBits {
+    my $cmd = 'whiptail'
+			. " --backtitle $backtitle"
+            . ' --title "Choose a Key Length"'
+            . ' --inputbox "Pick a number greater than 2000, but less than 10000 (speed). The more random, the better."'
+            . ' 9 68'
+			. "$BITS"
+            . ' 3>&1 1>&2 2>&3';
+	$BITS = `$cmd`;
+    $exitstatus = $?;
+	return;
 }
 
 ## Read Config File
-readConfig(){
-    KEYNAME=""
-    while read k v; do
-        if [ -n "$k" -a -n "$v" ]; then
-            if [[ "$k" == "Host" ]]; then
-                if [ -n "$KEYNAME" ]; then
-                    KEYS[$KEYNAME]=$KEY
-                fi
-                KEYNAME=$v
-                unset KEY
-                declare -A KEY
-            else
-                KEY[$k]=$v
-            fi
-        fi
-    done < "$file"
-    if [ -n "$KEYNAME" ]; then
-        KEYS[$KEYNAME]=$KEY
-    fi
+sub readConfig {
+    my $KEYNAME = "";
+	my %KEY;
+	open(my $fh, "<", "$ENV{HOME}/.ssh/config" ) or die "$!";
+    while (my $line = <$fh>) {
+		chomp $line;
+		$line =~ /^\s*(\S*)\s+(\S*)\s*$/;
+        if ( length($1) && length($2) ) {
+            if ( $1 eq "Host" ) {
+                if ( length $KEYNAME ) {
+                    $KEYS{$KEYNAME} = $KEY;
+                }
+                $KEYNAME = $2;
+				foreach $k (keys %KEY) {
+                	delete $KEY{$k};
+				}
+            } else {
+                $KEY{$1} = $2;
+            }
+        }
+	    if ( length( $KEYNAME ) ) {
+    	    $KEYS{$KEYNAME} = $KEY;
+	    }
+	}
+	close($fh);
+	return;
 }
 
 ## Get Key Choices for Menu
-getChoices() {
-    CHOICES=""
-    for k in "${!KEYS[@]}"; do
-        CHOICES="$CHOICES$k//"
-    done
+sub getChoices {
+    $CHOICES="";
+    foreach $k (keys %KEYS) {
+        $CHOICES = "$CHOICES$k//";
+    }
 }
 
+## Print Welcome
+welcome();
+
 ## Make sure everything is set up
-setup
+setup();
 
 ## Read in the existing key configurations
-readConfig
+readConfig();
 
-exitstatus=$?
+$exitstatus = $?;
 
 ## Run Multiple Times Until Quit
-while ! [ $exitstatus -eq 255 ]; do
+while ($exitstatus != 255 ) {
 
     # Ask for Mode
-    selectMode
-	if [ $exitstatus -eq 1 ]; then exit; fi
-    if [ $exitstatus -eq 0 ]; then
+    selectMode();
+	if ( $exitstatus == 1 ) { exit; }
+    if ( $exitstatus == 0 ) {
 
         # update the choices for menus
-        getChoices
+        getChoices();
         # run through the mode
-        case $MODE in
-            "Create" )
-                newKey
-                if [ $exitstatus -eq 0 ]; then selectHostName;    fi
-                if [ $exitstatus -eq 0 ]; then selectCipher;        fi
-                if [ $exitstatus -eq 0 ]; then selectBits;        fi
-                   ;;
-            "Update" )
-                selectKey
-                if [ $exitstatus -eq 0 ]; then
-					KEY=$KEYS["$HOST"]
-					echo "$HOST"
-					NAME=$KEY["HostName"]
-					selectHostName
-				fi
-                if [ $exitstatus -eq 0 ]; then selectCipher;        fi
-                if [ $exitstatus -eq 0 ]; then selectBits;        fi
-                ;;
-            "Replace" )
-                selectKey
-                   ;;
-            "Remove" )
-                selectKey
-                unset KEYS[$HOST]
-                ;;
-            "Save" )
-                   ;;
-        esac
+        switch ($MODE) {
+            case "Create" {
+                newKey();
+                if ( $exitstatus == 0 ) { selectHostName(); }
+                if ( $exitstatus == 0 ) { selectCipher(); }
+                if ( $exitstatus == 0 ) { selectBits(); }
+            }
+            case "Update" {
+                selectKey();
+                if ( $exitstatus == 0 ) {
+					$KEY = $KEYS{$HOST};
+					`echo $HOST`;
+					$NAME = $KEY{"HostName"};
+					selectHostName();
+				}
+                if ( $exitstatus == 0 ) { selectCipher(); }
+                if ( $exitstatus == 0 ) { selectBits(); }
+            }
+            case "Replace" {
+                selectKey();
+            }
+            case "Remove" {
+                selectKey();
+                delete $KEYS{$HOST};
+            }
+            case "Save" {
+            }
+        }
 
-    fi
-
-done
+    }
+	exit;
+}
 
