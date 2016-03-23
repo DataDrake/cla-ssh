@@ -14,6 +14,9 @@
 backtitle="cla-ssh: Command Line Assistant for SSH"
 
 ## GLOBALS
+HOST="$USER-$HOSTNAME"
+NAME="$HOSTNAME"
+BITS=2048
 declare -A KEYS
 CHOICES=""
 
@@ -81,16 +84,18 @@ newKey() {
             --title "New Key" \
             --inputbox "\nEnter a Key Name:" \
             9 68 \
+			${HOST} \
             3>&1 1>&2 2>&3 )
     exitstatus=$?
 }
 
 ## Select a New Key
 selectHostName() {
-    HOSTNAME=$( whiptail --backtitle "$backtitle" \
+    NAME=$( whiptail --backtitle "$backtitle" \
                 --title "Set Hostname" \
                 --inputbox "\nEnter a Hostname:" \
                 9 68 \
+				${NAME} \
                 3>&1 1>&2 2>&3 )
     exitstatus=$?
 }
@@ -106,6 +111,7 @@ selectCipher() {
               "ecdsa" "Good" \
               "dsa" "Worse" \
               "rsa1" "Last Resort" \
+			  ${CIPHER} \
               3>&1 1>&2 2>&3 )
     exitstatus=$?
 }
@@ -113,9 +119,10 @@ selectCipher() {
 ## Select a Bit Width
 selectBits() {
     BITS=$( whiptail --backtitle "$backtitle" \
-               --title "Choose a Key Length" \
+            --title "Choose a Key Length" \
             --inputbox "Pick a number greater than 2000, but less than 10000 (speed). The more random, the better." \
-               9 68 \
+            9 68 \
+			${BITS} \
             3>&1 1>&2 2>&3 )
     exitstatus=$?
 }
@@ -178,7 +185,12 @@ while ! [ $exitstatus -eq 255 ]; do
                    ;;
             "Update" )
                 selectKey
-                if [ $exitstatus -eq 0 ]; then selectHostName;    fi
+                if [ $exitstatus -eq 0 ]; then
+					KEY=$KEYS["$HOST"]
+					echo "$HOST"
+					NAME=$KEY["HostName"]
+					selectHostName
+				fi
                 if [ $exitstatus -eq 0 ]; then selectCipher;        fi
                 if [ $exitstatus -eq 0 ]; then selectBits;        fi
                 ;;
