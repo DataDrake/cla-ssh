@@ -18,11 +18,11 @@ use warnings;
 my $backtitle = "\"cla-ssh: Command Line Assistant for SSH\"";
 
 ## GLOBALS
-my $HOST = "$ENV{USER}-" . `hostname`;
-my $NAME = `hostname`;
+my $HOST;
+my $NAME;
 my $BITS = 2048;
 my %KEYS;
-my $CHOICES = "";
+my $CHOICES;
 my $exitstatus = 0;
 
 ## Display Welcome Message
@@ -78,11 +78,25 @@ sub selectKey {
             . ' --title "Select a Key"'
             . ' --menu ""'
             . ' 12 68 5'
-            . " $CHOICES"
+            . "$CHOICES"
             . " 3>&1 1>&2 2>&3";
 	$HOST = `$cmd`;
     $exitstatus = $?;
 	return;
+}
+
+## Select a Field
+sub selectField {
+	my $field;
+    my $cmd = "whiptail --backtitle $backtitle"
+            . ' --title "Select a Field"'
+            . ' --menu ""'
+            . ' 12 68 5'
+            . "$CHOICES"
+            . " 3>&1 1>&2 2>&3";
+	$field = `$cmd`;
+    $exitstatus = $?;
+	return $field;
 }
 
 ## Select a New Key
@@ -91,9 +105,9 @@ sub newKey {
 			. " --backtitle $backtitle"
             . ' --title "New Key"'
             . ' --inputbox "\nEnter a Key Name:"'
-            . ' 9 68'
-			. " $HOST"
-            . " 3>&1 1>&2 2>&3";
+            . ' 9 68';
+	if ( length $HOST ) { $cmd .= " $HOST"; }
+    $cmd .= " 3>&1 1>&2 2>&3";
 	$HOST = `$cmd`;
     $exitstatus = $?;
 	return;
@@ -105,9 +119,9 @@ sub selectHostName {
 			. " --backtitle $backtitle"
             . ' --title "Set Hostname"'
             . ' --inputbox "\nEnter a Hostname:"'
-            . ' 9 68'
-			. $NAME
-            . ' 3>&1 1>&2 2>&3';
+            . ' 9 68';
+	if ( length $NAME ) { $cmd .= " $NAME"; }
+    $cmd .= " 3>&1 1>&2 2>&3";
 	$NAME = `$cmd`;
     $exitstatus = $?;
 	return;
@@ -124,9 +138,9 @@ sub selectCipher {
             . ' "rsa" "Better"'
             . ' "ecdsa" "Good"'
             . ' "dsa" "Worse"'
-            . ' "rsa1" "Last Resort"'
-			. "$CIPHER"
-            . ' 3>&1 1>&2 2>&3';
+            . ' "rsa1" "Last Resort"';
+	if ( length $CIPHER ) { $cmd .= " $CIPHER"; }
+    $cmd .= " 3>&1 1>&2 2>&3";
 	$CIPHER = `$cmd`;
     $exitstatus = $?;
 	return;
@@ -138,9 +152,9 @@ sub selectBits {
 			. " --backtitle $backtitle"
             . ' --title "Choose a Key Length"'
             . ' --inputbox "Pick a number greater than 2000, but less than 10000 (speed). The more random, the better."'
-            . ' 9 68'
-			. "$BITS"
-            . ' 3>&1 1>&2 2>&3';
+            . ' 9 68';
+	if ( length $BITS ) { $cmd .= " $BITS"; }
+    $cmd .= " 3>&1 1>&2 2>&3";
 	$BITS = `$cmd`;
     $exitstatus = $?;
 	return;
@@ -149,27 +163,17 @@ sub selectBits {
 ## Read Config File
 sub readConfig {
     my $KEYNAME = "";
-	my %KEY;
 	open(my $fh, "<", "$ENV{HOME}/.ssh/config" ) or die "$!";
     while (my $line = <$fh>) {
 		chomp $line;
 		$line =~ /^\s*(\S*)\s+(\S*)\s*$/;
         if ( length($1) && length($2) ) {
             if ( $1 eq "Host" ) {
-                if ( length $KEYNAME ) {
-                    $KEYS{$KEYNAME} = $KEY;
-                }
                 $KEYNAME = $2;
-				foreach $k (keys %KEY) {
-                	delete $KEY{$k};
-				}
             } else {
-                $KEY{$1} = $2;
+                $KEYS{$KEYNAME}{$1} = $2;
             }
         }
-	    if ( length( $KEYNAME ) ) {
-    	    $KEYS{$KEYNAME} = $KEY;
-	    }
 	}
 	close($fh);
 	return;
@@ -177,10 +181,26 @@ sub readConfig {
 
 ## Get Key Choices for Menu
 sub getChoices {
-    $CHOICES="";
-    foreach $k (keys %KEYS) {
-        $CHOICES = "$CHOICES$k//";
+    $CHOICES = "";
+    foreach $k (@_) {
+        $CHOICES = "$CHOICES \"$k\" \"\"";
     }
+	return;
+}
+
+## Update the value of a config field ##
+sub updateField{
+	my $field = $_[0];
+	$cmd = 'whiptail'
+         . " --backtitle $backtitle"
+         . ' --title "Update Field"'
+         . " --inputbox \"$field:\""
+         . ' 9 68';
+	if ( length $KEYS{$HOST}{$field} ) { $cmd .= " $KEYS{$HOST}{$field}"; }
+    $cmd .= " 3>&1 1>&2 2>&3";
+	$value = `$cmd`;
+	if ( $? == 0) { $KEYS{$HOST}{$field} = $value; }
+	return;
 }
 
 ## Print Welcome
@@ -199,11 +219,13 @@ while ($exitstatus != 255 ) {
 
     # Ask for Mode
     selectMode();
-	if ( $exitstatus == 1 ) { exit; }
+	print "$MODE\n";
+	if ( $exitstatus >= 1 ) { exit; }
     if ( $exitstatus == 0 ) {
 
         # update the choices for menus
-        getChoices();
+		my @array = keys %KEYS;
+        getChoices(@array);
         # run through the mode
         switch ($MODE) {
             case "Create" {
@@ -215,13 +237,10 @@ while ($exitstatus != 255 ) {
             case "Update" {
                 selectKey();
                 if ( $exitstatus == 0 ) {
-					$KEY = $KEYS{$HOST};
-					`echo $HOST`;
-					$NAME = $KEY{"HostName"};
-					selectHostName();
+					getChoices(keys %KEYS{$HOST});
+					my $field = selectField();
+					if ( $exitstatus == 0 ) { updateField($field); }
 				}
-                if ( $exitstatus == 0 ) { selectCipher(); }
-                if ( $exitstatus == 0 ) { selectBits(); }
             }
             case "Replace" {
                 selectKey();
@@ -235,6 +254,5 @@ while ($exitstatus != 255 ) {
         }
 
     }
-	exit;
 }
 
