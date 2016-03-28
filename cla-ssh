@@ -27,23 +27,23 @@ my $exitstatus = 0;
 
 ## Display Welcome Message
 sub welcome {
-	my $cmd = 'whiptail'
-	. " --backtitle $backtitle"
+    my $cmd = 'whiptail'
+    . " --backtitle $backtitle"
     . ' --title "Welcome to cla-ssh"'
-	. ' --msgbox "This tool will allow you to manage SSH keys in a safe, easy way.\n\n                      Let\'s get started!"'
+    . ' --msgbox "This tool will allow you to manage SSH keys in a safe, easy way.\n\n                      Let\'s get started!"'
     . ' 9 68'
     . " 3>&1 1>&2 2>&3";
-	`$cmd`;
-	return;
+    `$cmd`;
+    return;
 }
 
 ## Set up SSH Config
 sub setup {
 
     ## Check for SSH Config Directory
-	unless ( -d "~/.ssh" ) {
-    	mkdir "~/.ssh";
-	}
+    unless ( -d "~/.ssh" ) {
+        mkdir "~/.ssh";
+    }
 
     ## Check for SSH Config
     my $file = "~/.ssh/config";
@@ -51,7 +51,7 @@ sub setup {
     unless( -e $file ) {
         `touch $file`;
     }
-	return;
+    return;
 }
 
 ## Select an Operating Mode
@@ -67,9 +67,9 @@ sub selectMode {
     . ' "Remove" "Delete an Existing Key"'
     . ' "Save" "Write Configuration"'
     . " 3>&1 1>&2 2>&3";
-	$MODE = `$cmd`;
+    $MODE = `$cmd`;
     $exitstatus = $?;
-	return;
+    return;
 }
 
 ## Select a Key
@@ -80,57 +80,57 @@ sub selectKey {
             . ' 12 68 5'
             . "$CHOICES"
             . " 3>&1 1>&2 2>&3";
-	$HOST = `$cmd`;
+    $HOST = `$cmd`;
     $exitstatus = $?;
-	return;
+    return;
 }
 
 ## Select a Field
 sub selectField {
-	my $field;
+    my $field;
     my $cmd = "whiptail --backtitle $backtitle"
             . ' --title "Select a Field"'
             . ' --menu ""'
             . ' 12 68 5'
             . "$CHOICES"
             . " 3>&1 1>&2 2>&3";
-	$field = `$cmd`;
+    $field = `$cmd`;
     $exitstatus = $?;
-	return $field;
+    return $field;
 }
 
 ## Select a New Key
 sub newKey {
     my $cmd = 'whiptail'
-			. " --backtitle $backtitle"
+            . " --backtitle $backtitle"
             . ' --title "New Key"'
             . ' --inputbox "\nEnter a Key Name:"'
             . ' 9 68';
-	if ( length $HOST ) { $cmd .= " $HOST"; }
+    if ( length $HOST ) { $cmd .= " $HOST"; }
     $cmd .= " 3>&1 1>&2 2>&3";
-	$HOST = `$cmd`;
+    $HOST = `$cmd`;
     $exitstatus = $?;
-	return;
+    return;
 }
 
 ## Select a New Key
 sub selectHostName {
     my $cmd = 'whiptail'
-			. " --backtitle $backtitle"
+            . " --backtitle $backtitle"
             . ' --title "Set Hostname"'
             . ' --inputbox "\nEnter a Hostname:"'
             . ' 9 68';
-	if ( length $NAME ) { $cmd .= " $NAME"; }
+    if ( length $NAME ) { $cmd .= " $NAME"; }
     $cmd .= " 3>&1 1>&2 2>&3";
-	$NAME = `$cmd`;
+    $NAME = `$cmd`;
     $exitstatus = $?;
-	return;
+    return;
 }
 
 ## Select a Cipher
 sub selectCipher {
     my $cmd = 'whiptail'
-			. " --backtitle $backtitle"
+            . " --backtitle $backtitle"
             . ' --title "Choose a Cipher"'
             . ' --menu ""'
             . ' 12 68 5'
@@ -139,34 +139,34 @@ sub selectCipher {
             . ' "ecdsa" "Good"'
             . ' "dsa" "Worse"'
             . ' "rsa1" "Last Resort"';
-	if ( length $CIPHER ) { $cmd .= " $CIPHER"; }
+    if ( length $CIPHER ) { $cmd .= " $CIPHER"; }
     $cmd .= " 3>&1 1>&2 2>&3";
-	$CIPHER = `$cmd`;
+    $CIPHER = `$cmd`;
     $exitstatus = $?;
-	return;
+    return;
 }
 
 ## Select a Bit Width
 sub selectBits {
     my $cmd = 'whiptail'
-			. " --backtitle $backtitle"
+            . " --backtitle $backtitle"
             . ' --title "Choose a Key Length"'
             . ' --inputbox "Pick a number greater than 2000, but less than 10000 (speed). The more random, the better."'
             . ' 9 68';
-	if ( length $BITS ) { $cmd .= " $BITS"; }
+    if ( length $BITS ) { $cmd .= " $BITS"; }
     $cmd .= " 3>&1 1>&2 2>&3";
-	$BITS = `$cmd`;
+    $BITS = `$cmd`;
     $exitstatus = $?;
-	return;
+    return;
 }
 
 ## Read Config File
 sub readConfig {
     my $KEYNAME = "";
-	open(my $fh, "<", "$ENV{HOME}/.ssh/config" ) or die "$!";
+    open(my $fh, "<", "$ENV{HOME}/.ssh/config" ) or die "$!";
     while (my $line = <$fh>) {
-		chomp $line;
-		$line =~ /^\s*(\S*)\s+(\S*)\s*$/;
+        chomp $line;
+        $line =~ /^\s*(\S*)\s+(\S*)\s*$/;
         if ( length($1) && length($2) ) {
             if ( $1 eq "Host" ) {
                 $KEYNAME = $2;
@@ -174,9 +174,9 @@ sub readConfig {
                 $KEYS{$KEYNAME}{$1} = $2;
             }
         }
-	}
-	close($fh);
-	return;
+    }
+    close($fh);
+    return;
 }
 
 ## Get Key Choices for Menu
@@ -185,22 +185,22 @@ sub getChoices {
     foreach $k (@_) {
         $CHOICES = "$CHOICES \"$k\" \"\"";
     }
-	return;
+    return;
 }
 
 ## Update the value of a config field ##
 sub updateField{
-	my $field = $_[0];
-	$cmd = 'whiptail'
+    my $field = $_[0];
+    $cmd = 'whiptail'
          . " --backtitle $backtitle"
          . ' --title "Update Field"'
          . " --inputbox \"$field:\""
          . ' 9 68';
-	if ( length $KEYS{$HOST}{$field} ) { $cmd .= " $KEYS{$HOST}{$field}"; }
+    if ( length $KEYS{$HOST}{$field} ) { $cmd .= " $KEYS{$HOST}{$field}"; }
     $cmd .= " 3>&1 1>&2 2>&3";
-	$value = `$cmd`;
-	if ( $? == 0) { $KEYS{$HOST}{$field} = $value; }
-	return;
+    $value = `$cmd`;
+    if ( $? == 0) { $KEYS{$HOST}{$field} = $value; }
+    return;
 }
 
 ## Print Welcome
@@ -219,13 +219,9 @@ while ($exitstatus != 255 ) {
 
     # Ask for Mode
     selectMode();
-	print "$MODE\n";
-	if ( $exitstatus >= 1 ) { exit; }
+    if ( $exitstatus >= 1 ) { exit; }
     if ( $exitstatus == 0 ) {
 
-        # update the choices for menus
-		my @array = keys %KEYS;
-        getChoices(@array);
         # run through the mode
         switch ($MODE) {
             case "Create" {
@@ -235,17 +231,27 @@ while ($exitstatus != 255 ) {
                 if ( $exitstatus == 0 ) { selectBits(); }
             }
             case "Update" {
-                selectKey();
-                if ( $exitstatus == 0 ) {
-					getChoices(keys %KEYS{$HOST});
-					my $field = selectField();
-					if ( $exitstatus == 0 ) { updateField($field); }
-				}
+                while( $exitstatus == 0 ){
+                    # update the choices for menus
+                    my @array = keys %KEYS;
+                    getChoices(@array);
+                    selectKey();
+                    if ( $exitstatus == 0 ) {
+                        getChoices(keys $KEYS{$HOST});
+                        $CHOICES = ' "<Add>" ""' . " $CHOICES";
+                        my $field = selectField();
+                        if ( $exitstatus == 0 ) { updateField($field); }
+                    }
+                }
             }
             case "Replace" {
+                my @array = keys %KEYS;
+                   getChoices(@array);
                 selectKey();
             }
             case "Remove" {
+                my @array = keys %KEYS;
+                   getChoices(@array);
                 selectKey();
                 delete $KEYS{$HOST};
             }
